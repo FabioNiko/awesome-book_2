@@ -3,6 +3,6 @@ language:
   ui:
     chapter_name: "Chapter "
 rmd_files: [
-  "Pledge_progress.Rmd"]
+  "index.Rmd"]
 delete_merged_file: true 
 output_dir: "docs"

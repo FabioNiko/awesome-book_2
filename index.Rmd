@@ -1,6 +1,6 @@
 --- 
 title: "Making free books with RStudio’s RMarkdown & Bookdown"
-author: "Julie Lowndes"
+author: "Fabio Thoma"
 date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 # output: bookdown::gitbook
@@ -9,37 +9,1390 @@ bibliography: [book.bib, packages.bib]
 biblio-style: apalike
 link-citations: yes
 github-repo: openscapes/series
-description: "A mini bookdown tutorial book on how to make bookdown books."
+description: "To new endavors"
 ---
 
-# Welcome {#welcome}
 
-hi
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+#rm(list = ls())
 
-It's possible to create beautiful books for free using [RStudio's R Markdown](http://rmarkdown.rstudio.com/) and Yihui Xie's [bookdown](https://bookdown.org/yihui/bookdown/) and hosting them on [Github](http://github.com). This is pretty new and incredibly cool. It is a really powerful way to communicate science using the same reproducible workflow you use for your analyses and collaborations.
+library(tidyverse)
+library(googledrive)
+library(readxl)
+library(plotly)
+library(dplyr)
+library(htmlwidgets)
 
-This tutorial borrows heavily from a lot of great tutorials and resources you should check out too -- there are links throughout. It also parallels a previous tutorial [Making free websites with RStudio’s R Markdown](https://jules32.github.io/rmarkdown-website-tutorial/).
+library(tidyr)
+library(stringr)
 
-The best way to learn is to follow along with your own laptop, but all are welcome. We'll spend half the time with the tutorial and half the time for you to work on your own website and get help. If you bring your laptop please do this beforehand: 
-
-1. install [RStudio](https://www.rstudio.com/products/rstudio/download/)
-1. create a [GitHub]((http://github.com)) account ([advice](http://happygitwithr.com/github-acct.html))
-1. set up your computer to talk to GitHub
-    - have RStudio linked directly (highly recommended) ([instructions sections 8-14](http://happygitwithr.com/hello-git.html))
-    - or install the [Desktop App](https://desktop.github.com/)
-    - or be familiar with git commands for the command line ([tutorial](https://try.github.io/levels/1/challenges/1))
-
-----
+```
 
 
-**Examples:**
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+setwd("/Users/fabiothoma/Desktop/International_year/v22_12")
 
-We have been using bookdown for the Ocean Health Index:  [**ohi-science.org/data-science-training**](http://ohi-science.org/data-science-training) and Openscapes: [**openscapes.org/series**](https://openscapes.org/series).  
-And R Markdown is much more than books and websites -- here's a [**one-minute video about R Markdown**](http://rmarkdown.rstudio.com/lesson-1.html) to get you excited. 
 
-----
+ENG <- read_excel("Pledge Makers Progress - IY - EN (Responses).xlsx")
 
-## Learn all about Bookdown
+FRA <- read_excel("Pledge Makers Progress - IY - FR (Responses).xlsx")
 
-The best way to learn more about bookdown is from Yihui Xie himself. You can read his book [bookdown: Authoring Books and Technical Documents with R Markdown](https://bookdown.org/yihui/bookdown/) or watch his webinar [introducing bookdown](https://www.rstudio.com/resources/webinars/introducing-bookdown/).
+ESP <- read_excel("Pledge Makers Progress - IY - ESP (Responses).xlsx")
+
+number_resp <- nrow(ENG) + nrow(FRA) + nrow(ESP) - 1
+
+share_resp <- round((number_resp/306 * 100),2)
+
+```
+
+
+
+# Overview of survey
+
+
+This brief report provides an overview of the progress survey on the International Year pledges. In total, more than 352 pledges were submitted by a variety of pledgemakers. All pledges went through a peer review process and 306 pledges were published on the [endchildlabour.org](endchildlabour.org) website. 
+
+The International Year team launched the survey on 26 November. To date (`r Sys.Date()`), `r number_resp` surveys were submitted corresponding to `r share_resp` % of all pledgemakers. 
+  
+
+# Progress made in 2021
+
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+
+# Which answer best describes the progress made on your 2021 Action Pledge so far?
+
+# Delete one entry 
+ENG <- ENG[-c(27),]
+
+names(ENG)[4] <- "Progress"
+
+names(FRA)[4] <- "Progress"
+
+names(ESP)[4] <- "Progress"
+
+
+# French - change names
+
+#replace_French_Progress <- function(x,y){
+#  str_replace_all(FRA$Progress, y, z)
+#}
+
+#replace_French("Progress","Déjà réalisée","Already completed")
+
+FRA$Progress <- str_replace_all(FRA$Progress, "Déjà réalisée", "Already completed")
+
+FRA$Progress <-  str_replace_all(FRA$Progress, "Autre", "Other")
+
+FRA$Progress <- str_replace_all(FRA$Progress, "Des progrès ont été réalisés, mais ils prendront plus de temps qu'en 2021","Progress has been made, but it will take longer than 2021")
+
+FRA$Progress <- str_replace_all(FRA$Progress, "En bonne voie d’être réalisée d'ici la fin de 2021","On track to complete it by the end of 2021")
+
+FRA$Progress <-  str_replace_all(FRA$Progress, "Pas encore de progrès", "No progress yet")
+
+
+
+
+# Spanish - change names
+
+
+ESP$Progress <- str_replace_all(ESP$Progress, "Ya completado", "Already completed")
+
+ESP$Progress <-  str_replace_all(ESP$Progress, "Otra respuesta", "Other")
+
+ESP$Progress <- str_replace_all(ESP$Progress, "Se han hecho progresos, pero se completará después de 2021","Progress has been made, but it will take longer than 2021")
+
+ESP$Progress <- str_replace_all(ESP$Progress, "En vías de completarse a finales de 2021","On track to complete it by the end of 2021")
+
+#ESP$Progress <-  str_replace_all(ESP$Progress, "Otra respuesta", "No progress yet")
+
+
+
+# Can maybe be made easier
+
+eng_progress <- data.frame(ENG$Progress) 
+names(eng_progress) <- "Progress"
+
+fra_progress <- data.frame(FRA$Progress) 
+names(fra_progress) <- "Progress"
+
+esp_progress <- data.frame(ESP$Progress)
+names(esp_progress) <- "Progress"
+
+progress <- rbind(eng_progress,fra_progress,esp_progress)
+
+
+progress <- progress %>%
+  count(Progress) 
+
+#%>%
+#  mutate(pct = n / sum(n),
+#         pctlabel = paste0(round(pct*100), "%"))
+
+
+fig <- plot_ly(progress, labels = ~Progress, values = ~n, type = 'pie')
+
+# Using the international year colours
+colors <- c('#8D094A', '#CA0148', '#146C77', '#F6B940', '#052538')
+
+
+fig <- fig %>% layout(title = 'Progress on pledge implmentation',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+#fig
+
+
+fig2 <- plot_ly(progress, labels = ~Progress, values = ~n, type = 'pie',
+                              marker = list(colors = colors,
+                      line = list(color = '#FFFFFF', width = 1)))
+
+
+fig2 <- fig2 %>% layout(title = 'Progress made 2021 Action Pledge',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+fig2
+
+
+saveWidget(fig2, "fig.html")
+temp_file_proc <- tempfile(pattern = "", fileext = ".png")
+
+#webshot("fig.html", temp_file_proc)
+
+
+
+
+```
+
+<h3>Other progress made in 2021</h3>
+
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+
+
+names(ENG)[5] <- "Progress_other"
+
+names(FRA)[5] <- "Progress_other"
+
+names(ESP)[5] <- "Progress_other"
+
+
+
+
+progress_other_eng <- ENG %>% select(5)
+progress_other_fra <- FRA %>% select(5)
+progress_other_esp <- ESP %>% select(5)
+
+
+
+
+progress_other <- rbind(progress_other_eng,progress_other_fra,progress_other_esp)
+
+
+progress_other_eng_org <- ENG %>% select(27)
+names(progress_other_eng_org)[1] <- "progress_other_eng_org"
+progress_other_fra_org <- FRA %>% select(27)
+names(progress_other_fra_org)[1] <- "progress_other_eng_org"
+progress_other_esp_org <- ESP %>% select(27)
+names(progress_other_esp_org)[1] <- "progress_other_eng_org"
+
+progress_other_org <- rbind(progress_other_eng_org,progress_other_fra_org,progress_other_esp_org)
+
+progress_other_df <- data.frame(progress_other,progress_other_org )
+
+names(progress_other_df)[1] <- "Original"
+
+names(progress_other_df)[2] <- "English translations"
+
+progress_other_df <- progress_other_df[complete.cases(progress_other_df[ , 1]),]
+
+library(DT)
+
+DT::datatable(progress_other_df,caption= "What other progress did materialize in 2021?")
+
+```
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+
+
+# Make a formula for the table 
+
+other_table <- function(x,y){
+
+names(ENG)[x] <- "Other"
+
+names(FRA)[x] <- "Other"
+
+names(ESP)[x] <- "Other"
+
+
+
+
+Other_eng <- ENG %>% select(x)
+Other_fra <- FRA %>% select(x)
+Other_esp <- ESP %>% select(x)
+
+
+
+
+Other_org_df <- rbind(Other_eng,Other_fra,Other_esp)
+
+
+Other_eng_trans <- ENG %>% select(y)
+names(Other_eng_trans)[1] <- "other_eng_trans"
+Other_fr_trans <- FRA %>% select(y)
+names(Other_fr_trans)[1] <- "other_eng_trans"
+Other_es_trans <- ESP %>% select(y)
+names(Other_es_trans)[1] <- "other_eng_trans"
+
+other_trans <- rbind(Other_eng_trans,Other_fr_trans,Other_es_trans)
+
+other_df <- data.frame(Other_org_df,other_trans )
+
+names(other_df)[1] <- "Original"
+
+names(other_df)[2] <- "English translations"
+
+other_df <- other_df[complete.cases(other_df[ , 1]),]
+
+  
+}
+
+#progress_other_df1 <- other_table(5,27)
+
+
+library(DT)
+
+#DT::datatable(progress_other_df1,caption= "What other progress did materialize in 2021?")
+
+```
+
+
+
+# Accelerate action
+
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+
+# In your opinion, did the pledge process help you accelerate action to end child labour?
+
+
+names(ENG)[7] <- "Accelerate"
+names(FRA)[7] <- "Accelerate"
+names(ESP)[7] <- "Accelerate"
+
+
+
+# Change French 
+
+
+replace_French_Accelerate <- function(x,y){
+  str_replace_all(FRA$Accelerate, x, y)
+}
+
+
+
+
+FRA$Accelerate <- replace_French_Accelerate("Il a permis de mobiliser des soutiens internes","It helped to mobilise internal support")
+
+FRA$Accelerate <- replace_French_Accelerate("Nous avons pu maximiser l'impact en une seule année","It helped us maximise impact in a single year")
+
+FRA$Accelerate <- replace_French_Accelerate("Nous avons pu acquérir et utiliser dans nos activités des connaissances sur le travail des enfants","It helped to gain knowledge on child labour, which was used in our activities")
+
+FRA$Accelerate <- replace_French_Accelerate("Nous avons pu faire le point et réévaluer","It allowed us to take stock and reassess")
+
+
+FRA$Accelerate <- replace_French_Accelerate("Non, le processus d'engagement n'a pas aidé à accélérer les progrès pour mettre fin au travail des enfants","No, the pledge process did not help to accelerate progress to end child labour")
+
+
+# Spanish
+
+
+
+
+replace_Spanish_Accelerate <- function(x,y){
+  str_replace_all(ESP$Accelerate, x, y)
+}
+
+
+
+
+ESP$Accelerate <- replace_Spanish_Accelerate("Nos ha ayudado a movilizar apoyo interno","It helped to mobilise internal support")
+
+ESP$Accelerate <- replace_Spanish_Accelerate("Nos ha ayudado a maximizar el impacto en un solo año","It helped us maximise impact in a single year")
+
+ESP$Accelerate <- replace_Spanish_Accelerate("Nos ha ayudado a adquirir conocimientos sobre el trabajo infantil que hemos utilizado en nuestras actividades","It helped to gain knowledge on child labour, which was used in our activities")
+
+ESP$Accelerate <- replace_Spanish_Accelerate("Nos ha permitido hacer balance y reevaluar la situación","It allowed us to take stock and reassess")
+
+ESP$Accelerate <-  str_replace_all(ESP$Accelerate, "Otra respuesta", "Other")
+
+
+#ESP$Accelerate <- replace_Spanish_Accelerate("Non, le processus d'engagement n'a pas aidé à accélérer les progrès pour mettre fin au travail des enfants","No, the engagement process has not helped accelerate progress to end child labor")
+
+
+
+# Convert to ind. dataframes and bind together
+
+
+
+eng_accelerate <- data.frame(ENG$Accelerate) 
+names(eng_accelerate) <- "Accelerate"
+
+fra_accelerate <- data.frame(FRA$Accelerate) 
+names(fra_accelerate) <- "Accelerate"
+
+esp_accelerate <- data.frame(ESP$Accelerate)
+names(esp_accelerate) <- "Accelerate"
+
+
+accelerate <- rbind(eng_accelerate,fra_accelerate,esp_accelerate)
+
+
+accelerate <- accelerate %>% select(1) %>%
+    mutate(Accelerate = strsplit(as.character(Accelerate), ", I")) %>% 
+    unnest(Accelerate)
+
+
+accelerate$Accelerate <- ifelse(startsWith(accelerate$Accelerate, 't '), str_replace_all(accelerate$Accelerate,"t ","It "),accelerate$Accelerate)
+
+
+
+accelerate <- accelerate %>% select(1) %>% mutate(Accelerate = strsplit(as.character(Accelerate), ", O")) %>% unnest(Accelerate)
+
+accelerate$Accelerate <- ifelse(startsWith(accelerate$Accelerate, 'ther'), str_replace_all(accelerate$Accelerate,"ther","Other"),accelerate$Accelerate)
+
+
+
+accelerate$Accelerate <- str_replace_all(accelerate$Accelerate,"impacIt","impact")
+
+accelerate_action <- accelerate %>%
+  count(Accelerate) 
+
+# Ordering dataframe
+
+
+accelerate_action$Accelerate <- factor(accelerate_action$Accelerate, levels = unique(accelerate_action$Accelerate)[order(accelerate_action$n, decreasing = TRUE)])
+
+
+colors2 <- c('#8D094A', '#CA0148', '#146C77', '#F6B940', '#052538','#A5A5A5','#FC9C08','#CA0148')
+
+
+#fig_accelerate1 <- plot_ly(accelerate_action, y = ~Accelerate, x = ~n, type = 'bar',orientation='h')
+
+#fig_accelerate1
+
+fig_accelerate <- plot_ly(accelerate_action, y = ~n, x = ~Accelerate, color= ~Accelerate, type = 'bar',
+              marker = list(colors = colors2,
+                   line = list(color = '#FFFFFF', width = 1)))
+
+
+fig_accelerate <- fig_accelerate %>% layout(title = 'Did the pledge process help you <br> accelerate action to end child labour? (Multiple Choice)',showlegend = FALSE,margin = list(b = 160), xaxis = list(tickfont = list(size = 10)))
+fig_accelerate
+
+
+
+#p <- ggplot(data=accelerate_action, aes(x=Accelerate, y=n)) +
+#    geom_bar(stat="identity", position=position_dodge(), colour="black") +
+#    scale_fill_manual(values=c('#8D094A', '#CA0148', '#146C77', '#F6B940', #'#052538','#A5A5A5','#FC9C08','#CA0148'))
+
+
+#fig <- ggplotly(p)
+
+
+#accelerate_action %>% order(accelerate_action$n,decreasing=TRUE)
+
+#accelerate <- accelerate %>% layout(title = 'How did the pledge help accelerate action',
+#         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+#         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+
+```
+
+
+<h3>Accelerate action - Other </h3>
+
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+
+accelerate_other_df1 <- other_table(8,28)
+
+
+DT::datatable(accelerate_other_df1,caption= "Other Accelerate Action")
+
+```
+
+  
+# Learning from pledgemaker community 
+
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+
+# Have you learnt from the pledgemaker community?
+
+names(ENG)[9] <- "Learning"
+
+names(FRA)[9] <- "Learning"
+
+names(ESP)[9] <- "Learning"
+
+
+# Change French into English
+
+
+replace_French_Learning<- function(x,y){
+  str_replace_all(FRA$Learning, x, y)
+}
+
+
+
+
+FRA$Learning <- replace_French_Learning("Nous avons obtenu des conseils d'autres contributeurs","We gained tips from other pledgemakers")
+
+FRA$Learning <- replace_French_Learning("Nous avons été inspirés par d'autres contributeurs","We were inspired by other pledgemakers")
+
+FRA$Learning <- replace_French_Learning("Nous avons contacté d'autres contributeurs et /ou avons collaboré avec eux","We reached out to and/or collaborated with other pledgemakers")
+
+FRA$Learning <- replace_French_Learning("Non, nous n'avons pas appris de la communauté des donateurs","No, we have not learnt from the pledgemaker community")
+
+
+
+# Change Spanish into English
+
+
+replace_Spanish_Learning<- function(x,y){
+  str_replace_all(ESP$Learning, x, y)
+}
+
+
+
+ESP$Learning <- replace_Spanish_Learning("Hemos obtenido consejos de otras personas que han hecho compromisos","We gained tips from other pledgemakers")
+
+ESP$Learning <- replace_Spanish_Learning("Nos hemos inspirado en otras personas que han hecho compromisos","We were inspired by other pledgemakers")
+
+ESP$Learning <- replace_Spanish_Learning("Nos hemos puesto en contacto y/o hemos colaborado con otras personas que han hecho compromisos","We reached out to and/or collaborated with other pledgemakers")
+
+ESP$Learning <- replace_Spanish_Learning("Otra respuesta","Other")
+
+
+
+
+
+
+# Convert to ind. dataframes and bind together
+
+
+
+eng_learning <- data.frame(ENG$Learning) 
+names(eng_learning) <- "Learning"
+
+fra_learning <- data.frame(FRA$Learning) 
+names(fra_learning) <- "Learning"
+
+esp_learning <- data.frame(ESP$Learning)
+names(esp_learning) <- "Learning"
+
+
+learning <- rbind(eng_learning,fra_learning,esp_learning)
+
+learning2 <- rbind(eng_learning,fra_learning,esp_learning)
+
+
+# Splitting cells
+
+
+
+learning <- learning %>% 
+    mutate(Learning = strsplit(as.character(Learning), ", W")) %>% 
+    unnest(Learning)
+
+
+learning$Learning <- ifelse(startsWith(learning$Learning, 'e '), str_replace_all(learning$Learning,"e ","We "),learning$Learning)
+
+
+learning <- learning %>%
+  count(Learning) 
+
+learning_plot <- plot_ly(learning, labels = ~Learning, values = ~n, type = 'pie',
+                              marker = list(colors = colors,
+                      line = list(color = '#FFFFFF', width = 1)))
+
+
+learning_plot <- learning_plot %>% layout(title = 'Have you learnt <br> from the pledgemaker community? (Multiple Choice)',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+learning_plot
+
+
+```
+
+
+<h3> Learning from pledgemaker community - Other </h3>
+
+
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+
+learning_other_df1 <- other_table(10,29)
+
+DT::datatable(learning_other_df1,caption= "Learning from pledgemaker community - Other ")
+
+```
+
+# Improve pledge process
+
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+
+# How could your pledge progress be improved?
+
+
+names(ENG)[11] <- "Improvement"
+
+names(FRA)[11] <- "Improvement"
+
+names(ESP)[11] <- "Improvement"
+
+# Change French into English
+
+
+replace_French_Improvement <- function(x,y){
+  str_replace_all(FRA$Improvement, x, y)
+}
+
+
+FRA$Improvement <- replace_French_Improvement("Échanger avec d'autres contributeurs","Exchanging with fellow pledgemakers")
+
+FRA$Improvement <- replace_French_Improvement("Bénéficier d’un appui technique","Receiving technical support")
+
+FRA$Improvement <- replace_French_Improvement("Bénéficier d’un appui financier","Receiving financial support")
+
+
+FRA$Improvement <- replace_French_Improvement("Volonté politique accrue","Increased political will")
+
+
+FRA$Improvement <- replace_French_Improvement("Autre","Other")
+
+
+
+
+# Change Spanish into English
+
+replace_Spanish_Improvement <- function(x,y){
+  str_replace_all(ESP$Improvement, x, y)
+}
+
+
+
+ESP$Improvement <- replace_Spanish_Improvement("Hablando con otras personas que han hecho compromisos de acción","Exchanging with fellow pledgemakers")
+
+ESP$Improvement <- replace_Spanish_Improvement("Con más apoyo técnico","Receiving technical support")
+
+ESP$Improvement <- replace_Spanish_Improvement("Con más apoyo económico","Receiving financial support")
+
+
+ESP$Improvement <- replace_Spanish_Improvement("Con más voluntad política","Increased political will")
+
+
+ESP$Improvement <- replace_Spanish_Improvement("Otra respuesta","Other")
+
+
+
+# Convert to ind. dataframes and bind together
+
+
+
+eng_improvement <- data.frame(ENG$Improvement) 
+names(eng_improvement) <- "Improvement"
+
+fra_improvement <- data.frame(FRA$Improvement) 
+names(fra_improvement) <- "Improvement"
+
+esp_improvement <- data.frame(ESP$Improvement)
+names(esp_improvement) <- "Improvement"
+
+
+improvement <- rbind(eng_improvement,fra_improvement,esp_improvement)
+
+
+
+# Seperate w/ receiving
+
+improvement <- improvement %>%
+    mutate(Improvement = strsplit(as.character(Improvement), ", R")) %>% 
+    unnest(Improvement)
+
+improvement$Improvement <- ifelse(startsWith(improvement$Improvement, 'ec'), str_replace_all(improvement$Improvement,"eceiving","Receiving"),improvement$Improvement)
+
+# Same for Increased
+
+improvement <- improvement %>%  mutate(Improvement = strsplit(as.character(Improvement), ", I")) %>% 
+    unnest(Improvement)
+
+
+improvement$Improvement <- ifelse(startsWith(improvement$Improvement, 'ncreased'), str_replace_all(improvement$Improvement,"ncreased","Increased"),improvement$Improvement)
+
+
+
+# Same for Other
+
+improvement <- improvement %>%  mutate(Improvement = strsplit(as.character(Improvement), ", O")) %>%   unnest(Improvement)
+
+
+improvement$Improvement <- ifelse(startsWith(improvement$Improvement, 'ther'), str_replace_all(improvement$Improvement,"ther","Other"),improvement$Improvement)
+
+
+
+# Last, No 
+
+
+improvement <- improvement %>%  mutate(Improvement = strsplit(as.character(Improvement), ", N")) %>%   unnest(Improvement)
+
+
+improvement$Improvement <- ifelse(startsWith(improvement$Improvement, 'o '), str_replace_all(improvement$Improvement,"o ","No "),improvement$Improvement)
+
+
+# Counting 
+
+
+improvement <- improvement %>%
+  count(Improvement) 
+
+# Plot
+
+
+improvement_plot <- plot_ly(improvement, labels = ~Improvement, values = ~n, type = 'pie',
+                              marker = list(colors = colors,
+                      line = list(color = '#FFFFFF', width = 1)))
+
+
+improvement_plot <- improvement_plot %>% layout(title = 'How could your pledge progress be improved? <br> (Multiple Choice)',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+
+improvement_plot
+
+```
+
+<h3>Improve pledge process - Other</h3>
+
+```{r,warning = FALSE, message = FALSE, echo=FALSE}
+
+improvement_other_df1 <- other_table(12,30)
+
+DT::datatable(improvement_other_df1,caption= "Improve pledge process - Other")
+
+
+```
+
+
+## Receiving financial support
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+
+fin_support_df1 <- other_table(13,31)
+
+DT::datatable(fin_support_df1,caption= "In which areas would you need financial support?")
+
+
+```
+
+
+## Receiving technical support
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+
+technical_support_df1 <- other_table(14,32)
+
+DT::datatable(technical_support_df1,caption= "In which areas would you need technical support?")
+
+
+```
+
+
+
+
+# Share progress / inspire others
+
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+# How could we help you to share progress and inspire others?
+
+
+
+names(ENG)[15] <- "share_progress"
+names(FRA)[15] <- "share_progress"
+names(ESP)[15] <- "share_progress"
+
+
+
+
+
+# Change French into English
+
+
+replace_French_share_progress <- function(x,y){
+  str_replace_all(FRA$share_progress, x, y)
+}
+
+
+
+
+FRA$share_progress <- replace_French_share_progress("Proposer un jumelage avec d'autres contributeurs","Offer matchmaking with other plegdemakers")
+
+FRA$share_progress <- replace_French_share_progress("Aide à la rédaction d'une histoire/d'un article de blog","Support in writing a story/blog post")
+
+FRA$share_progress<- replace_French_share_progress("Création d'un compte sur les réseaux sociaux","Setting up a social media account")
+
+
+#FRA$share_progress<- replace_French_share_progress("","No help required")
+
+
+
+
+
+
+# Change Spanish into English
+
+replace_Spanish_share_progress <- function(x,y){
+  str_replace_all(ESP$share_progress, x, y)
+}
+
+
+
+ESP$share_progress <- replace_Spanish_share_progress("Proponiendo alianzas con otras personas que han hecho compromisos de acción","Offer matchmaking with other plegdemakers")
+
+ESP$share_progress <- replace_Spanish_share_progress("Con apoyo para escribir una historia o una entrada de blog","Support in writing a story/blog post")
+
+#ESP$share_progress<- replace_French_share_progress("","Setting up a social media account")
+
+
+#ESP$share_progress<- replace_French_share_progress("","No help required")
+
+
+ESP$share_progress <- replace_Spanish_share_progress("Otra respuesta","Other")
+
+
+
+
+
+# Convert to ind. dataframes and bind together
+
+
+
+eng_share_progress <- data.frame(ENG$share_progress) 
+names(eng_share_progress) <- "share_progress"
+
+fra_share_progress <- data.frame(FRA$share_progress) 
+names(fra_share_progress) <- "share_progress"
+
+esp_share_progress <- data.frame(ESP$share_progress)
+names(esp_share_progress) <- "share_progress"
+
+
+share_progress <- rbind(eng_share_progress,fra_share_progress,esp_share_progress)
+
+
+
+
+
+share_progress <- share_progress %>%
+    mutate(share_progress = strsplit(as.character(share_progress), ", S")) %>% 
+    unnest(share_progress)
+
+
+
+share_progress$share_progress <- ifelse(startsWith(share_progress$share_progress, 'upport'), str_replace_all(share_progress$share_progress,"upport","Support"),share_progress$share_progress)
+
+share_progress$share_progress <- ifelse(startsWith(share_progress$share_progress, 'etting'), str_replace_all(share_progress$share_progress,"etting","Setting"),share_progress$share_progress)
+
+
+
+# Counting 
+
+
+share_progress <- share_progress %>%
+  count(share_progress) 
+
+
+
+share_progress_plot <- plot_ly(share_progress, labels = ~share_progress, values = ~n, type = 'pie',
+                              marker = list(colors = colors,
+                      line = list(color = '#FFFFFF', width = 1)))
+
+
+share_progress_plot <- share_progress_plot %>% layout(title = 'How could we help you to share progress <br> and inspire others? (Multiple Choice)',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+share_progress_plot
+
+
+```
+
+<h3> Share progress / inspire others </h3> 
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+
+share_progress_other_df1 <- other_table(16,31)
+
+DT::datatable(share_progress_other_df1,caption= "Share Progress/ Inspire others - Other")
+
+
+```
+
+# Making another pledge next year
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+
+# Would you consider making another Action Pledge next year?
+
+
+
+names(ENG)[17] <- "Action_Pledge"
+
+names(FRA)[17] <- "Action_Pledge"
+
+names(ESP)[17] <- "Action_Pledge"
+
+
+
+
+# Change French into English
+
+
+
+
+FRA$Action_Pledge <- str_replace_all(FRA$Action_Pledge,"Oui","Yes")
+
+FRA$Action_Pledge <- str_replace_all(FRA$Action_Pledge,"Peut-être","Maybe")
+
+#FRA$Action_Pledge <- str_replace_all(FRA$Action_Pledge,"Non","No")
+
+
+
+# Change Spanish into English
+
+
+ESP$Action_Pledge <- str_replace_all(ESP$Action_Pledge,"Sí","Yes")
+
+#ESP$Action_Pledge <- str_replace_all(ESP$Action_Pledge,"Peut-être","Maybe")
+
+#ESP$Action_Pledge <- str_replace_all(ESP$Action_Pledge,"Non","No")
+
+
+
+
+
+# Convert to ind. dataframes and bind together
+
+
+
+eng_Action_Pledge <- data.frame(ENG$Action_Pledge) 
+names(eng_Action_Pledge) <- "Action_Pledge"
+
+fra_Action_Pledge <- data.frame(FRA$Action_Pledge) 
+names(fra_Action_Pledge) <- "Action_Pledge"
+
+esp_Action_Pledge <- data.frame(ESP$Action_Pledge)
+names(esp_Action_Pledge) <- "Action_Pledge"
+
+
+Action_Pledge <- rbind(eng_Action_Pledge,fra_Action_Pledge,esp_Action_Pledge)
+
+
+
+
+
+Action_Pledge <- Action_Pledge %>%
+  count(Action_Pledge) 
+
+
+
+Action_Pledge_plot <- plot_ly(Action_Pledge, labels = ~Action_Pledge, values = ~n, type = 'pie',
+                              marker = list(colors = colors,
+                      line = list(color = '#FFFFFF', width = 1)))
+
+
+Action_Pledge_plot <- Action_Pledge_plot %>% layout(title = ' Would you consider making another Action Pledge next year?',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+Action_Pledge_plot
+
+```
+  
+
+<h3> Another Pledge - Maybe </h3>
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+
+share_progress_other_df1 <- other_table(18,34)
+
+DT::datatable(share_progress_other_df1,caption= "Making another Action Pledge - Maybe")
+
+
+```
+
+
+
+# Trello Board
+
+
+Have you used any of the materials available on the End Child Labour 2021 Trello board [https://trello.com/b/U5dZZCNw/end-child-labour-2021](https://trello.com/b/U5dZZCNw/end-child-labour-2021) to create or share content?
+
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+
+
+
+names(ENG)[19] <- "Trello_Board"
+
+names(FRA)[19] <- "Trello_Board"
+
+names(ESP)[19] <- "Trello_Board"
+
+
+
+
+# Change French into English
+
+
+
+
+FRA$Trello_Board <- str_replace_all(FRA$Trello_Board,"Oui","Yes")
+
+
+FRA$Trello_Board <- str_replace_all(FRA$Trello_Board,"Non","No")
+
+
+
+# Change Spanish into English
+
+
+ESP$Trello_Board <- str_replace_all(ESP$Trello_Board,"Sí","Yes")
+
+#ESP$Action_Pledge <- str_replace_all(ESP$Action_Pledge,"Peut-être","Maybe")
+
+#ESP$Action_Pledge <- str_replace_all(ESP$Action_Pledge,"Non","No")
+
+
+# Convert to ind. dataframes and bind together
+
+
+
+eng_Trello_Board <- data.frame(ENG$Trello_Board) 
+names(eng_Trello_Board) <- "Trello_Board"
+
+fra_Trello_Board  <- data.frame(FRA$Trello_Board) 
+names(fra_Trello_Board) <- "Trello_Board"
+
+esp_Trello_Board <- data.frame(ESP$Trello_Board)
+names(esp_Trello_Board) <- "Trello_Board"
+
+
+Trello_Board <- rbind(eng_Trello_Board,fra_Trello_Board,esp_Trello_Board)
+
+
+
+
+
+Trello_Board <- Trello_Board %>%
+  count(Trello_Board) 
+
+# colors Trello
+colors_Trello <- c('#CA0148', '#146C77')
+
+
+Trello_Board_plot <- plot_ly(Trello_Board, labels = ~Trello_Board, values = ~n, type = 'pie',
+                              marker = list(colors = colors_Trello,
+                      line = list(color = '#FFFFFF', width = 1)))
+
+
+Trello_Board_plot <- Trello_Board_plot %>% layout(title = 'Have you used any of the materials available <br>on the End Child Labour 2021 Trello board?<br>',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+Trello_Board_plot
+
+```
+
+
+
+# Using #EndChildLabour2021
+
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+names(ENG)[20] <- "hashtag"
+names(FRA)[20] <- "hashtag"
+names(ESP)[20] <- "hashtag"
+
+
+
+
+# Change French into English
+
+
+replace_French_hashtag <- function(x,y){
+  str_replace_all(FRA$hashtag, x, y)
+}
+
+
+
+#FRA$hashtag <- str_replace_all(FRA$hashtag,'Pas souvent (au moins une fois depuis juin 2021)','Not often (at least once since June 2021)')
+
+# The upper does not work, hence working with ifelse
+FRA$hashtag <- ifelse(startsWith(FRA$hashtag, 'Pas souvent'),"Not often (at least once since June 2021)",FRA$hashtag)
+                    
+
+#FRA$hashtag <- replace_French_hashtag("Parfois (au moins trois fois depuis juin 2021)","Sometimes (at least three times since June 2021)")
+
+FRA$hashtag <- ifelse(startsWith(FRA$hashtag, 'Parfois'),"Sometimes (at least three times since June 2021)",FRA$hashtag)
+
+
+
+#FRA$hashtag<- replace_French_hashtag("Régulièrement (au moins une fois par mois)","Regularly (at least once a month)")
+
+FRA$hashtag <- ifelse(startsWith(FRA$hashtag, 'Régulièrement'),"Regularly (at least once a month)",FRA$hashtag)
+
+FRA$hashtag<- replace_French_hashtag("Jamais","Never")
+
+
+
+# Spanish to English
+
+replace_Spanish_hashtag <- function(x,y){
+  str_replace_all(ESP$hashtag, x, y)
+}
+
+
+
+
+#ESP$hashtag <- replace_Spanish_hashtag("A veces (al menos tres veces desde junio de 2021)","Sometimes (at least three times since June 2021)")
+
+ESP$hashtag <- ifelse(startsWith(ESP$hashtag, 'A veces'),"Sometimes (at least three times since June 2021)",ESP$hashtag)
+
+
+
+#ESP$hashtag<- replace_Spanish_hashtag("A menudo (al menos una vez al mes)","Regularly (at least once a month)")
+
+
+ESP$hashtag <- ifelse(startsWith(ESP$hashtag, 'A menudo'),"Regularly (at least once a month)",ESP$hashtag)
+
+ESP$hashtag<- replace_Spanish_hashtag("Nunca","Never")
+
+
+
+# Convert to ind. dataframes and bind together
+
+
+
+eng_hashtag <- data.frame(ENG$hashtag) 
+names(eng_hashtag) <- "hashtag"
+
+fra_hashtag <- data.frame(FRA$hashtag) 
+names(fra_hashtag) <- "hashtag"
+
+esp_hashtag <- data.frame(ESP$hashtag)
+names(esp_hashtag) <- "hashtag"
+
+
+hashtag <- rbind(eng_hashtag,fra_hashtag,esp_hashtag)
+
+
+
+
+
+hashtag <- hashtag %>%
+  count(hashtag) 
+
+
+
+hashtag_plot <- plot_ly(hashtag, labels = ~hashtag, values = ~n, type = 'pie',
+                              marker = list(colors = colors,
+                      line = list(color = '#FFFFFF', width = 1)))
+
+
+hashtag_plot <- hashtag_plot %>% layout(title = 'How often did you post about your pledge <br> using the hashtag #EndChildLabour2021?',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+hashtag_plot
+
+
+```
+
+
+
+# Receiving Information about International Year
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+
+# Where do you receive information about the 2021 International Year from?
+
+
+
+names(ENG)[22] <- "Information"
+
+names(FRA)[22] <- "Information"
+
+names(ESP)[22] <- "Information"
+
+
+# Change French into English
+
+
+replace_French_Information <- function(x,y){
+  str_replace_all(FRA$Information, x, y)
+}
+
+
+
+
+FRA$Information <- replace_French_Information("E-mails de liste de diffusion","Mailing list emails")
+
+
+FRA$Information <- replace_French_Information("Site Internet","Website")
+
+FRA$Information <- replace_French_Information("Autre","Other")
+
+FRA$Information <- replace_French_Information("Je ne reçois pas d'informations","I did not receive information")
+
+
+
+
+# Change Spanish into English
+
+
+
+replace_Spanish_Information <- function(x,y){
+  str_replace_all(ESP$Information, x, y)
+}
+
+
+
+
+ESP$Information <- replace_Spanish_Information("Lista de distribución de correo electrónico","Mailing list emails")
+
+ESP$Information <- replace_Spanish_Information("Página web","Website")
+
+
+
+
+
+
+
+# Convert to ind. dataframes and bind together
+
+
+
+eng_Information <- data.frame(ENG$Information) 
+names(eng_Information) <- "Information"
+
+fra_Information <- data.frame(FRA$Information) 
+names(fra_Information) <- "Information"
+
+esp_Information <- data.frame(ESP$Information)
+names(esp_Information) <- "Information"
+
+
+information <- rbind(eng_Information,fra_Information,esp_Information)
+
+
+
+# Split after comma
+
+
+
+information <- information %>%
+    mutate(Information = strsplit(as.character(Information), ", ")) %>% 
+    unnest(Information)
+
+
+
+##
+
+
+information <- information %>%
+  count(Information) 
+
+
+colors2 <- c('#8D094A', '#CA0148', '#146C77', '#F6B940', '#052538','#A5A5A5','#FC9C08','#CA0148')
+
+
+
+information$Information <- factor(information$Information, levels = unique(information$Information)[order(information$n, decreasing = TRUE)])
+
+
+
+fig_information <- plot_ly(information, y = ~n, x = ~Information, color= ~Information, type = 'bar',
+              marker = list(colors = colors2,
+                   line = list(color = '#FFFFFF', width = 1)))
+
+
+fig_information <- fig_information %>% layout(title = 'Where do you receive information <br> about the 2021 International Year from? (Multiple Choice)',showlegend = FALSE,margin = list(b = 160), xaxis = list(tickfont = list(size = 12)))
+
+fig_information
+
+
+```
+
+
+
+<h3>Receiving information about International Year - Other</h3>
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+
+share_progress_other_df1 <- other_table(23,35)
+
+DT::datatable(share_progress_other_df1,caption= "Receiving information - Other")
+
+
+```
+
+# Learning about Child Labour
+
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+#9) Do you feel that you learnt more about child labour this year?
+
+
+names(ENG)[24] <- "learn_CL"
+names(FRA)[24] <- "learn_CL"
+names(ESP)[24] <- "learn_CL"
+
+
+
+
+
+# Change French into English
+
+
+replace_French_learn_CL <- function(x,y){
+  str_replace_all(FRA$learn_CL, x, y)
+}
+
+
+
+
+FRA$learn_CL <- replace_French_learn_CL("J'ai appris plus sur la complexité du travail des enfants","I learnt more about the complexity of child labour")
+
+FRA$learn_CL <- replace_French_learn_CL("J'ai appris plus sur les causes profondes du travail des enfants","I learnt more about the root causes of child labour")
+
+FRA$learn_CL<- replace_French_learn_CL("J'ai appris plus sur les différents acteurs œuvrant contre le travail des enfants","I learnt more about the different actors working against child labour")
+
+
+FRA$learn_CL<- replace_French_learn_CL("J'ai appris plus sur les solutions potentielles contre le travail des enfants","I learnt more about potential solutions against child labour")
+
+FRA$learn_CL<- replace_French_learn_CL("Non, je n'ai pas l'impression d'avoir appris grand-chose de nouveau sur le travail des enfants cette année","No, I don’t feel I learnt much new about child labour this year")
+
+#FRA$learn_CL<- replace_French_learn_CL("","Other")
+
+
+
+# Change Spanish into English
+
+replace_Spanish_learn_CL <- function(x,y){
+  str_replace_all(ESP$learn_CL, x, y)
+}
+
+
+
+ESP$learn_CL <- replace_Spanish_learn_CL("He aprendido más cosas sobre la complejidad del trabajo infantil","I learnt more about the complexity of child labour")
+
+ESP$learn_CL <- replace_Spanish_learn_CL("He aprendido más cosas sobre las causas fundamentales del trabajo infantil","I learnt more about the root causes of child labour")
+
+ESP$learn_CL<- replace_Spanish_learn_CL("He aprendido más cosas sobre los distintos actores trabajando contra el trabajo infantil","I learnt more about the different actors working against child labour")
+
+
+ESP$learn_CL<- replace_Spanish_learn_CL("He aprendido más cosas sobre las posibles soluciones para acabar con el trabajo infantil","I learnt more about potential solutions against child labour")
+
+ESP$learn_CL<- replace_Spanish_learn_CL("Non, je n'ai pas l'impression d'avoir appris grand-chose de nouveau sur le travail des enfants cette année","No, I don’t feel I learnt much new about child labour this year")
+
+#ESP$learn_CL<- replace_Spanish_learn_CL("","Other")
+
+
+
+
+# Convert to ind. dataframes and bind together
+
+
+
+eng_learn_CL <- data.frame(ENG$learn_CL) 
+names(eng_learn_CL) <- "learn_CL"
+
+fra_learn_CL <- data.frame(FRA$learn_CL) 
+names(fra_learn_CL) <- "learn_CL"
+
+esp_learn_CL <- data.frame(ESP$learn_CL)
+names(esp_learn_CL) <- "learn_CL"
+
+
+learn_CL <- rbind(eng_learn_CL,fra_learn_CL,esp_learn_CL)
+
+
+
+learn_CL <- learn_CL %>%
+    mutate(learn_CL = strsplit(as.character(learn_CL), ", I")) %>% 
+    unnest(learn_CL)
+
+learn_CL<-learn_CL[!(learn_CL$learn_CL=="No"),]
+
+
+learn_CL$learn_CL <- ifelse(startsWith(learn_CL$learn_CL, ' learnt'), str_replace_all(learn_CL$learn_CL," learnt","I learnt"),learn_CL$learn_CL)
+
+learn_CL$learn_CL <- ifelse(startsWith(learn_CL$learn_CL, ' don'), str_replace_all(learn_CL$learn_CL," don","No, I don"),learn_CL$learn_CL)
+
+
+
+
+# Counting 
+
+
+learn_CL <- learn_CL %>%
+  count(learn_CL) 
+
+
+
+learn_CL_plot <- plot_ly(learn_CL, labels = ~learn_CL, values = ~n, type = 'pie',
+                              marker = list(colors = colors,
+                      line = list(color = '#FFFFFF', width = 1)))
+
+
+learn_CL_plot <- learn_CL_plot %>% layout(title = 'Do you feel that you learnt more about <br> child labour this year? (Multiple Choice)',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+learn_CL_plot
+
+
+```
+
+
+
+<h3> Learning about Child Labour - Other </h3>
+
+```{r,warning = FALSE, message = FALSE , echo=FALSE}
+
+
+share_progress_other_df1 <- other_table(25,36)
+
+DT::datatable(share_progress_other_df1,caption= "Learning about Child Labour - Other")
+
+
+```
+
+
 
